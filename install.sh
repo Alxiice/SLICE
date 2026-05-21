@@ -38,6 +38,7 @@ cmd_uninstall() {
   warn "  - Remove downloaded Docker images"
   warn "  - Remove .venv/mcp virtualenv"
   warn "  - Remove generated MCP config"
+  warn "  - Remove MCP wrapper scripts"
   echo ""
   read -rp "Are you sure? [y/N] " CONFIRM
   [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
@@ -52,6 +53,11 @@ cmd_uninstall() {
 
   info "Removing virtualenv..."
   rm -rf "$REPO_DIR/.venv/mcp"
+
+  info "Removing MCP wrapper scripts..."
+  rm -f "$REPO_DIR/.mcp/run-filesystem.sh"
+  rm -f "$REPO_DIR/.mcp/run-github.sh"
+  rmdir "$REPO_DIR/.mcp" 2>/dev/null || true
 
   info "Removing generated MCP config..."
   rm -f "$REPO_DIR/.continue/mcpServers/default-mcp-server.yaml"
@@ -119,12 +125,28 @@ cmd_install() {
     echo "  GitHub token : OK"
   fi
 
-  if [ -z "$GITHUB_TOKEN" ]; then
-    warn "No GitHub token — github MCP server will not authenticate."
-    GITHUB_TOKEN="REPLACE_WITH_YOUR_GITHUB_TOKEN"
-  else
-    echo "  GitHub token : OK"
-  fi
+  # ── MCP wrapper scripts ───────────────────────────────────
+  echo ""
+  info "Writing MCP wrapper scripts..."
+  MCP_SCRIPTS_DIR="$REPO_DIR/.mcp"
+  mkdir -p "$MCP_SCRIPTS_DIR"
+
+  cat > "$MCP_SCRIPTS_DIR/run-filesystem.sh" << EOF
+#!/bin/bash
+export PATH="$NODE_BIN:\$PATH"
+exec "$NPX" -y @modelcontextprotocol/server-filesystem "$REPO_DIR"
+EOF
+  chmod +x "$MCP_SCRIPTS_DIR/run-filesystem.sh"
+  echo "  Written: $MCP_SCRIPTS_DIR/run-filesystem.sh"
+
+  cat > "$MCP_SCRIPTS_DIR/run-github.sh" << EOF
+#!/bin/bash
+export PATH="$NODE_BIN:\$PATH"
+export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_TOKEN"
+exec "$NPX" -y @modelcontextprotocol/server-github
+EOF
+  chmod +x "$MCP_SCRIPTS_DIR/run-github.sh"
+  echo "  Written: $MCP_SCRIPTS_DIR/run-github.sh"
 
   # ── MCP config ────────────────────────────────────────────
   echo ""
@@ -138,13 +160,7 @@ version: 1.0.0
 
 mcpServers:
   - name: filesystem
-    command: $NPX
-    args:
-      - -y
-      - "@modelcontextprotocol/server-filesystem"
-      - $REPO_DIR
-    env:
-      PATH: "$NODE_BIN:/usr/bin:/bin"
+    command: $MCP_SCRIPTS_DIR/run-filesystem.sh
 
   - name: git
     command: $VENV_DIR/bin/python
@@ -157,13 +173,7 @@ mcpServers:
       PATH: "$GIT_BIN:/usr/bin:/bin"
 
   - name: github
-    command: $NPX
-    args:
-      - -y
-      - "@modelcontextprotocol/server-github"
-    env:
-      PATH: "$NODE_BIN:/usr/bin:/bin"
-      GITHUB_PERSONAL_ACCESS_TOKEN: "$GITHUB_TOKEN"
+    command: $MCP_SCRIPTS_DIR/run-github.sh
 EOF
   echo "  Written: $MCP_CONFIG"
 
