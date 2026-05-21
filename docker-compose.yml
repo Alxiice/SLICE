@@ -1,0 +1,58 @@
+services:
+
+  # ─── LLM Server ───────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      # Models stored outside container so they survive rebuilds
+      - ollama-models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ─── Model Bootstrapper (runs once, pulls models) ─────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      - ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    # Pulls models on first run, skips if already present
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5 &&
+        ollama pull qwen2.5-coder:14b &&
+        ollama pull qwen2.5-coder:7b
+      "
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: no
+
+  # ─── Web UI (browser interface + model management) ────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "${WEBUI_PORT:-3000}:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_AUTH=false         # Set to true if you want login
+      - WEBUI_NAME=Local AI Stack
+    depends_on:
+      - ollama
+
+volumes:
+  ollama-models:
+  open-webui-data:
