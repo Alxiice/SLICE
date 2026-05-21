@@ -4,6 +4,7 @@
 .continue/mcpServers/default-mcp-server.yaml
 # Environment
 .env.local
+.mcp
 
 # Python
 *.pyc

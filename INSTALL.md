@@ -76,7 +76,8 @@ Then :
 ./install.sh install
 ```
 
-Now doocker is going to fetch hugge images. Folllow the proogress with :
+Now docker is going to fetch huge images. This will slow down your machine for a minute.
+Follow the proogress with :
 ```bash
 # Model download progress
 docker logs -f ollama-init
@@ -87,17 +88,20 @@ docker logs -f open-webui
 ## 5. Verfy everything runs
 
 ```bash
-# 1. Check containers
+# 1. Check containers : you should get ollama and open-webui
 docker compose ps
 # 2. Check models were pulled
 docker exec ollama ollama list
 # 3. Check Ollama API responds
-curl http://localhost:11434
+curl http://localhost:11434 && echo ""
 ```
 
+## 6. Verify continue config
 
+```bash
+# Model config
+cat ~/.continue/config.yaml  # Should be the same as config/continue/config.yaml
 
-
-
-```
+# MCP config
+cat /s/apps/users/sonoleta/github/CodingStack/.continue/mcpServers/default-mcp-server.yaml
 ```
