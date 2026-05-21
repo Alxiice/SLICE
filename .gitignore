@@ -1,0 +1,45 @@
+# .gitignore
+
+# Python
+*.pyc
+__pycache__
+python_files/lib/**
+python_files/get-pip.py
+debug_coverage*/**
+languageServer/**
+languageServer.*/**
+.pytest_cache
+.python-version
+build/
+debug*.log
+debugpy*.log
+dist/**
+
+# Python venv
+**/.venv*/
+
+# Node
+npm-debug.log
+**/node_modules
+
+# ignore ai artifacts generated and placed in this folder
+ai-artifacts/*
+
+# VSCode
+.vscode/
+.vs/
+.vscode-test
+**/.vscode-test/**
+**/.vscode test/**
+**/.vscode-smoke/**
+
+# General
+.DS_Store
+envVars.txt
+*.log
+precommit.hook
+coverage/
+out
+tmp/**
+obj/**
+port.txt
