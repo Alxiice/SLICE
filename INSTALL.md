@@ -119,9 +119,6 @@ curl http://localhost:11434 && echo ""
 # Model config
 cat ~/.continue/config.yaml
 
-# MCP config
-cat .continue/mcpServers/default-mcp-server.yaml
-
 # MCP wrapper scripts
 ls -l .mcp/
 ```

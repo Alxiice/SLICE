@@ -56,6 +56,7 @@ cmd_uninstall() {
 
   info "Removing MCP wrapper scripts..."
   rm -f "$REPO_DIR/.mcp/run-filesystem.sh"
+  rm -f "$REPO_DIR/.mcp/run-git.sh"
   rm -f "$REPO_DIR/.mcp/run-github.sh"
   rmdir "$REPO_DIR/.mcp" 2>/dev/null || true
 
@@ -139,6 +140,27 @@ exec "$NPX" -y @modelcontextprotocol/server-filesystem "\$TARGET"
 EOF
   chmod +x "$MCP_SCRIPTS_DIR/run-filesystem.sh"
   echo "  Written: $MCP_SCRIPTS_DIR/run-filesystem.sh"
+
+  cat > "$MCP_SCRIPTS_DIR/run-git.sh" << EOF
+#!/bin/bash
+REPO="\${1:-\$HOME}"
+
+# Walk up to find git root
+while [ "\$REPO" != "/" ]; do
+  [ -d "\$REPO/.git" ] && break
+  REPO="\$(dirname "\$REPO")"
+done
+
+# Fallback to AIDE repo if no git root found
+if [ "\$REPO" = "/" ]; then
+  REPO="$REPO_DIR"
+fi
+
+export PATH="$VENV_DIR/bin:$GIT_BIN:/usr/bin:/bin"
+exec "$VENV_DIR/bin/python" -m mcp_server_git --repository "\$REPO"
+EOF
+  chmod +x "$MCP_SCRIPTS_DIR/run-git.sh"
+  echo "  Written: $MCP_SCRIPTS_DIR/run-git.sh"
 
   cat > "$MCP_SCRIPTS_DIR/run-github.sh" << EOF
 #!/bin/bash
