@@ -33,12 +33,12 @@ find_bin() {
 cmd_uninstall() {
   echo ""
   warn "This will:"
-  warn "  - Stop and remove all CodingStack containers"
+  warn "  - Stop and remove all AIDE containers"
   warn "  - Remove Docker volumes (ollama models + webui data)"
   warn "  - Remove downloaded Docker images"
   warn "  - Remove .venv/mcp virtualenv"
-  warn "  - Remove generated MCP config"
   warn "  - Remove MCP wrapper scripts"
+  warn "  - Remove generated Continue config"
   echo ""
   read -rp "Are you sure? [y/N] " CONFIRM
   [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
@@ -59,8 +59,8 @@ cmd_uninstall() {
   rm -f "$REPO_DIR/.mcp/run-github.sh"
   rmdir "$REPO_DIR/.mcp" 2>/dev/null || true
 
-  info "Removing generated MCP config..."
-  rm -f "$REPO_DIR/.continue/mcpServers/default-mcp-server.yaml"
+  info "Removing Continue config..."
+  rm -f "$HOME/.continue/config.yaml"
 
   echo ""
   info "Uninstall complete."
@@ -68,7 +68,7 @@ cmd_uninstall() {
 
 cmd_install() {
   echo ""
-  echo "=== CodingStack Install ==="
+  echo "=== AIDE Install ==="
   echo "Repo: $REPO_DIR"
   echo ""
 
@@ -134,7 +134,8 @@ cmd_install() {
   cat > "$MCP_SCRIPTS_DIR/run-filesystem.sh" << EOF
 #!/bin/bash
 export PATH="$NODE_BIN:\$PATH"
-exec "$NPX" -y @modelcontextprotocol/server-filesystem "$REPO_DIR"
+TARGET="\${1:-\$HOME}"
+exec "$NPX" -y @modelcontextprotocol/server-filesystem "\$TARGET"
 EOF
   chmod +x "$MCP_SCRIPTS_DIR/run-filesystem.sh"
   echo "  Written: $MCP_SCRIPTS_DIR/run-filesystem.sh"
@@ -148,47 +149,18 @@ EOF
   chmod +x "$MCP_SCRIPTS_DIR/run-github.sh"
   echo "  Written: $MCP_SCRIPTS_DIR/run-github.sh"
 
-  # ── MCP config ────────────────────────────────────────────
-  echo ""
-  info "Writing MCP config..."
-  MCP_CONFIG="$REPO_DIR/.continue/mcpServers/default-mcp-server.yaml"
-  mkdir -p "$(dirname "$MCP_CONFIG")"
-
-  cat > "$MCP_CONFIG" << EOF
-name: CodingStack Workspace
-version: 1.0.0
-
-mcpServers:
-  - name: filesystem
-    command: $MCP_SCRIPTS_DIR/run-filesystem.sh
-
-  - name: git
-    command: $VENV_DIR/bin/python
-    args:
-      - -m
-      - mcp_server_git
-      - --repository
-      - $REPO_DIR
-    env:
-      PATH: "$GIT_BIN:/usr/bin:/bin"
-
-  - name: github
-    command: $MCP_SCRIPTS_DIR/run-github.sh
-EOF
-  echo "  Written: $MCP_CONFIG"
-
   # ── Continue config ───────────────────────────────────────
   echo ""
+  info "Writing Continue config..."
   CONTINUE_CONFIG="$HOME/.continue/config.yaml"
-  if [ ! -f "$CONTINUE_CONFIG" ]; then
-    info "Copying Continue config to ~/.continue/config.yaml ..."
-    mkdir -p "$HOME/.continue"
-    cp "$REPO_DIR/config/continue/config.yaml" "$CONTINUE_CONFIG"
-    echo "  Written: $CONTINUE_CONFIG"
-  else
-    info "~/.continue/config.yaml already exists — skipping."
-    echo "  To overwrite: cp $REPO_DIR/config/continue/config.yaml $CONTINUE_CONFIG"
-  fi
+  mkdir -p "$HOME/.continue"
+
+  sed \
+    -e "s|AIDE_REPO_DIR|$REPO_DIR|g" \
+    -e "s|AIDE_GIT_BIN|$GIT_BIN|g" \
+    "$REPO_DIR/config/continue/config.yaml" > "$CONTINUE_CONFIG"
+
+  echo "  Written: $CONTINUE_CONFIG"
 
   # ── Docker stack ──────────────────────────────────────────
   echo ""

@@ -37,6 +37,23 @@ models:
     roles:
       - embed
 
+mcpServers:
+  - name: filesystem
+    command: AIDE_REPO_DIR/.mcp/run-filesystem.sh
+
+  - name: git
+    command: AIDE_REPO_DIR/.venv/mcp/bin/python
+    args:
+      - -m
+      - mcp_server_git
+      - --repository
+      - "${workspaceFolder}"
+    env:
+      PATH: "AIDE_GIT_BIN:/usr/bin:/bin"
+
+  - name: github
+    command: AIDE_REPO_DIR/.mcp/run-github.sh
+
 contextProviders:
   - name: file
   - name: codebase

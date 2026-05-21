@@ -1,22 +1,21 @@
-# AlICS
+# SLICE
 
-Alice AI Coding Stack.
+**S**elf-hosted **L**ocal **I**ntegrated **C**oding **E**nvironment
 
-## Description
-
-Local AI coding assistant. No cloud API keys. Runs entirely on your GPU.
+## Stack
 
 | Component | Role |
 |-----------|------|
-| [Ollama](https://ollama.com) | Runs LLMs locally on your GPU |
+| [Ollama](https://ollama.com) | Runs LLMs locally via Docker |
 | [Continue.dev](https://continue.dev) | VS Code AI assistant (chat, autocomplete, edit) |
-| [Open WebUI](https://github.com/open-webui/open-webui) | Browser chat interface (optional) |
+| [Open WebUI](https://github.com/open-webui/open-webui) | Browser chat interface |
 | MCP Servers | Give the AI access to your filesystem, git and GitHub |
 
 ## Requirements
 
 - Linux (tested on Rocky Linux 9.4)
 - NVIDIA GPU + drivers
+- Docker + NVIDIA Container Toolkit
 - Python 3.11+
 - Node.js 18+
 - Git
@@ -31,73 +30,40 @@ git clone https://github.com/yourorg/CodingStack.git
 cd CodingStack
 ```
 
-### 2. Run the install script
+### 2. Install
 
-```bash
-./install.sh
-```
-
-This will:
-- Create a local `.venv/mcp` virtualenv
-- Install MCP servers (filesystem, git, GitHub)
-- Generate `.continue/mcpServers/default-mcp-server.yaml` with your local paths
-- Copy the Continue config to `~/.continue/config.yaml`
-
-### 3. Install Ollama
-
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-Pull the default models (~14GB total):
-```bash
-ollama pull qwen2.5-coder:14b
-ollama pull qwen2.5-coder:7b
-```
-
-### 4. Install Continue.dev in VS Code
-
-Extensions → search **Continue** → Install
-
-Or via CLI:
-```bash
-code --install-extension Continue.continue
-```
-
-### 5. Reload VS Code
-
-`Ctrl+Shift+P` → `Developer: Reload Window`
-
-The Continue sidebar should now show the AI chat with MCP tools active.
+Follow the [Install](./INSTALL.md) file for detailed installation instructions.
 
 ---
 
-## Optional — Open WebUI (browser interface)
+## Services
 
-If you want a browser-based chat interface:
+| Service | URL |
+|---------|-----|
+| Ollama API | http://localhost:11434 |
+| Open WebUI | http://localhost:3000 |
 
 ```bash
-# Requires Docker + NVIDIA Container Toolkit
+# Start
 docker compose up -d
-```
 
-Then open http://localhost:3000
-
-```bash
 # Stop
 docker compose down
-```
 
-See [Docker setup](#docker-setup) below if this is your first time.
+# Status
+docker compose ps
+```
 
 ---
 
 ## Daily Use
 
 ```bash
-# Make sure Ollama is running
-ollama serve          # if not running as a system service
-curl http://localhost:11434   # should print "Ollama is running"
+# Check Ollama is running
+curl http://localhost:11434 && echo ""   # should print "Ollama is running"
+
+# Check models
+docker exec ollama ollama list
 ```
 
 ### VS Code Shortcuts
@@ -127,17 +93,15 @@ Browse available models at https://ollama.com/library
 
 ```bash
 # Pull a new model
-ollama pull <model-name>
+docker exec ollama ollama pull <model-name>
 
 # List downloaded models
-ollama list
+docker exec ollama ollama list
 ```
 
 ---
 
 ## Docker Setup
-
-Only needed if you want Open WebUI or don't want to install Ollama natively.
 
 ### Install Docker
 
@@ -145,8 +109,8 @@ Only needed if you want Open WebUI or don't want to install Ollama natively.
 sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
 sudo dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl --now enable docker
-sudo usermod -a -G docker $(whoami)
-sudo reboot
+sudo usermod -aG docker $USER
+# logout and log back in
 ```
 
 ### Install NVIDIA Container Toolkit
@@ -164,31 +128,55 @@ docker run --rm --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
 
 ---
 
+## Uninstall
+
+```bash
+./install.sh uninstall
+```
+
+This will stop containers, remove volumes, images, virtualenv and generated configs.
+
+---
+
 ## Troubleshooting
 
 **Ollama not responding**
 ```bash
 curl http://localhost:11434
-sudo systemctl status ollama
-sudo systemctl restart ollama
+docker logs ollama
+docker compose restart ollama
 ```
 
 **MCP server not connecting**
 ```bash
-# Re-run install to regenerate config with correct paths
-./install.sh
-# Then reload VS Code
+# Re-run install to regenerate wrapper scripts and config
+./install.sh install
+
+# Test wrapper scripts manually
+.mcp/run-filesystem.sh
+.mcp/run-github.sh
+
+# Reload VS Code
+# Ctrl+Shift+P → Developer: Reload Window
 ```
 
 **GPU not detected by Docker**
 ```bash
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
+docker run --rm --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
 ```
 
 **Continue not picking up config**
 ```bash
-ls ~/.continue/
-# Should contain config.yaml
-# Reload VS Code: Ctrl+Shift+P → Developer: Reload Window
+ls ~/.continue/        # should contain config.yaml
+ls .continue/mcpServers/   # should contain default-mcp-server.yaml
+# Ctrl+Shift+P → Developer: Reload Window
 ```
+
+**Models not available after install**
+```bash
+docker exec ollama ollama list
+# If empty, pull manually:
+docker exec ollama ollama pull qwen2.5-coder:14b
+docker exec ollama ollama pull qwen2.5-coder:7b
