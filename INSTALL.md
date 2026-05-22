@@ -97,6 +97,11 @@ docker logs -f ollama        # Ollama startup
 docker logs -f open-webui    # Open WebUI health
 ```
 
+Additionally : get nomic
+```bash
+docker exec ollama ollama pull nomic-embed-text
+```
+
 ## 5. Verify everything runs
 
 ```bash
@@ -127,3 +132,31 @@ Reload VS Code:
 `Ctrl+Shift+P` → `Developer: Reload Window`
 
 The Continue sidebar should now show the AI chat with MCP tools active.
+
+## 7. Install another model
+
+```bash
+docker exec ollama ollama pull devstral-small-2
+```
+
+And then add this to the config file :
+
+```bash
+- name: Devstral Small 2
+    provider: ollama
+    model: devstral-small-2
+    apiBase: http://localhost:11434
+    contextLength: 16384      # keep this low to save VRAM for KV cache
+    toolCallStrategy: auto
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+```
+
+You can pre-load the model:
+```bash
+curl http://localhost:11434/api/generate -d '{"model": "devstral-small-2", "prompt": "", "keep_alive": -1}'
+```

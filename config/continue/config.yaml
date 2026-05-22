@@ -12,6 +12,8 @@ models:
       - chat
       - edit
       - apply
+    capabilities:
+      - tool_use
 
   - name: Qwen2.5-Coder 7B
     provider: ollama
@@ -22,6 +24,8 @@ models:
       - chat
       - edit
       - apply
+    capabilities:
+      - tool_use
 
   - name: Qwen2.5-Coder 7B Autocomplete
     provider: ollama
@@ -49,13 +53,13 @@ mcpServers:
   - name: github
     command: AIDE_REPO_DIR/.mcp/run-github.sh
 
-contextProviders:
-  - name: file
-  - name: codebase
-  - name: terminal
-  - name: problems
-  - name: diff
-  - name: folder
+context:
+  - provider: file
+  - provider: codebase
+  - provider: terminal
+  - provider: problems
+  - provider: diff
+  - provider: folder
 
 slashCommands:
   - name: edit
@@ -66,3 +70,5 @@ slashCommands:
     description: Write unit tests
   - name: explain
     description: Explain this code
+  - name: cmd
+    description: Run a terminal command and use the output as context
