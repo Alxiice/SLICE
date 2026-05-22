@@ -2,7 +2,7 @@ services:
 
   # ─── LLM Server ───────────────────────────────────────────────
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.30.0-rc22
     container_name: ollama
     restart: unless-stopped
     environment:
@@ -35,7 +35,7 @@ services:
     entrypoint: >
       /bin/sh -c "
         sleep 5 &&
-        ollama pull qwen2.5-coder:14b &&
+        ollama pull qwen2.5-coder:14b-instruct-q5_k_m &&
         ollama pull qwen2.5-coder:7b
       "
     environment:

@@ -148,6 +148,13 @@ And then add this to the config file :
     apiBase: http://localhost:11434
     contextLength: 16384      # keep this low to save VRAM for KV cache
     toolCallStrategy: auto
+    systemMessage: >
+      You are an expert coding assistant specializing in Python, QML, JavaScript,
+      and C++. You work in a large VFX/animation pipeline codebase (Meshroom /
+      AliceVision). Be concise. When editing, show only changed parts unless
+      asked for the full file. Always use available tools (filesystem, git,
+      github) rather than guessing — check before answering questions about
+      code structure, current branch, file contents, or git history.
     roles:
       - chat
       - edit
